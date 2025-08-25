@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>Welcome, {{ name }}</h3>
+<hr>
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header bg-primary text-white">Create New Batch</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('create_batch') }}">
+          <div class="mb-3">
+            <label for="batch_name" class="form-label">Batch Name</label>
+            <input type="text" class="form-control" id="batch_name" name="batch_name" required autocomplete="off">
+          </div>
+          <button type="submit" class="btn btn-primary">Create Batch</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header bg-success text-white">Add Student to Batch</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('add_student_route') }}">
+          <div class="mb-3">
+            <label for="batch" class="form-label">Batch</label>
+            <select class="form-select" id="batch" name="batch" required autocomplete="off">
+              {% for batch in batches %}
+              <option value="{{ batch }}">{{ batch }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="student_id" class="form-label">Student ID</label>
+            <input type="text" class="form-control" id="student_id" name="student_id" required autocomplete="off">
+          </div>
+          <div class="mb-3">
+            <label for="name" class="form-label">Student Name</label>
+            <input type="text" class="form-control" id="name" name="name" required autocomplete="off">
+          </div>
+          <div class="mb-3">
+            <label for="email" class="form-label">Student Email (optional)</label>
+            <input type="email" class="form-control" id="email" name="email" placeholder="Enter email (optional)" autocomplete="off">
+          </div>
+          <button type="submit" class="btn btn-success">Add Student</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header bg-info text-white">Upload Students Excel</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('upload_students') }}" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label for="upload_batch" class="form-label">Batch</label>
+            <select class="form-select" id="upload_batch" name="batch" required autocomplete="off">
+              {% for batch in batches %}
+              <option value="{{ batch }}">{{ batch }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="students_file" class="form-label">Excel File (.xlsx)</label>
+            <input type="file" class="form-control" id="students_file" name="students_file" accept=".xlsx" required autocomplete="off">
+          </div>
+          <button type="submit" class="btn btn-info">Upload & Generate QR</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="row">
+  {% for batch in batches %}
+  <div class="col-md-4 mb-3">
+    <div class="card shadow">
+      <div class="card-body">
+        <h5 class="card-title">{{ batch }}</h5>
+    <img src="{{ url_for('static', filename='img/vcodez.webp') }}" alt="Vcodez Logo" style="width:40px;display:block;margin:auto;">
+  <a href="{{ url_for('scan_page') }}" class="btn btn-success w-100 mb-2">Scan</a>
+  <a href="{{ url_for('generate_qr_batch', batch=batch) }}" class="btn btn-primary w-100 mb-2">Generate QR PDF</a>
+  <a href="{{ url_for('view_batch_qr', batch=batch) }}" class="btn btn-info w-100 mb-2">View QR Codes</a>
+  <a href="{{ url_for('attendance_batch', batch=batch) }}" class="btn btn-warning w-100 mb-2">View Attendance</a>
+  <a href="{{ url_for('download_qr_zip', batch=batch) }}" class="btn btn-secondary w-100 mb-2">Download QR ZIP</a>
+      <div class="w-100 mb-2">
+        <form method="post" action="{{ url_for('edit_batch') }}" id="batchRenameForm{{ loop.index }}" class="d-inline" style="display:none;">
+          <input type="hidden" name="old_batch_name" value="{{ batch }}">
+          <label for="new_batch_name{{ loop.index }}" class="visually-hidden">New Batch Name</label>
+          <input type="text" id="new_batch_name{{ loop.index }}" name="new_batch_name" value="{{ batch }}" class="form-control form-control-sm d-inline" style="max-width: 120px;display:inline-block;" required onblur="toggleRename({{ loop.index }}, false)" autocomplete="off">
+        </form>
+        <button type="button" class="btn btn-outline-primary btn-sm ms-1" id="editBtn{{ loop.index }}" onclick="toggleRename({{ loop.index }}, true)">Edit Batch Name</button>
+      </div>
+<script>
+function toggleRename(idx, show) {
+  const form = document.getElementById('batchRenameForm' + idx);
+  const btn = document.getElementById('editBtn' + idx);
+  const input = form.querySelector('input[name="new_batch_name"]');
+  if (show) {
+    form.style.display = 'inline';
+    btn.style.display = 'none';
+    input.focus();
+    input.select();
+  } else {
+    form.style.display = 'none';
+    btn.style.display = '';
+  }
+}
+// Submit on Enter
+document.addEventListener('DOMContentLoaded', function() {
+  {% for batch in batches %}
+    var form = document.getElementById('batchRenameForm{{ loop.index }}');
+    if (form) {
+      var input = form.querySelector('input[name="new_batch_name"]');
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          form.submit();
+        }
+      });
+    }
+  {% endfor %}
+});
+</script>
+  <a href="{{ url_for('auto_absent') }}" class="btn btn-danger w-100">Auto Absent & Email</a>
+  </div>
+    </div>
+  </div>
+  {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<script>
+function toggleRename(idx, show) {
+  const form = document.getElementById('batchRenameForm' + idx);
+  const btn = document.getElementById('editBtn' + idx);
+  const input = form.querySelector('input[name="new_batch_name"]');
+  if (show) {
+    form.style.display = 'inline';
+    btn.style.display = 'none';
+    input.focus();
+    input.select();
+  } else {
+    form.style.display = 'none';
+    btn.style.display = '';
+  }
+}
+// Submit on Enter
+document.addEventListener('DOMContentLoaded', function() {
+  {% for batch in batches %}
+    var form = document.getElementById('batchRenameForm{{ loop.index }}');
+    if (form) {
+      var input = form.querySelector('input[name="new_batch_name"]');
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          form.submit();
+        }
+      });
+    }
+  {% endfor %}
+});
+</script>
+{% endblock %}

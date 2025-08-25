@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title or "Vcodez Attendance" }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  <style>
+    .vcodez-navbar {
+      background: linear-gradient(90deg, #1976d2 80%, #00ff99 100%) !important;
+      box-shadow: 0 2px 12px #1976d244;
+    }
+    .vcodez-title {
+      font-size: 2.1rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #fff;
+      font-family: 'Segoe UI', 'Montserrat', 'Arial', sans-serif;
+      text-shadow: 0 2px 8px #0005;
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <nav class="navbar navbar-expand-lg navbar-dark vcodez-navbar">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('index') }}">
+        <span class="vcodez-title">QR Attendance System</span>
+      </a>
+      <div class="navbar-nav ms-auto">
+        <a class="nav-link" href="{{ url_for('index') }}">Dashboard</a>
+        <a class="nav-link" href="{{ url_for('scan_page') }}">Scan</a>
+        {% if session.get('user') %}
+          <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+        {% else %}
+          <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+          <a class="nav-link" href="{{ url_for('signup') }}">Sign Up</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+
+  <div class="main-content">
+    <div class="container py-4">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} shadow-sm">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+
+  {% block modal %}{% endblock %}
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Fix for Bootstrap modal not interactive in some stacking/z-index cases
+document.addEventListener('DOMContentLoaded', function() {
+  var modal = document.getElementById('autoAbsentModal');
+  if (modal) {
+    modal.addEventListener('shown.bs.modal', function () {
+      setTimeout(function() {
+        modal.focus();
+      }, 100);
+    });
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+
+
+<h4 class="mb-3 text-center">Scan QR (Webcam)</h4>
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div id="reader" class="shadow-sm rounded" style="width:100%; min-height:400px;"></div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h6 class="card-title">Scan Result</h6>
+        <pre id="result" class="fs-5 bg-light p-3 rounded border border-primary" style="min-height: 120px;">—</pre>
+        <div id="status" class="alert d-none mt-3 fs-5" role="alert"></div>
+        <p class="text-muted small mb-0">Tip: Each QR encodes JSON like <code>{"{"}id:"A001", name:"John", batch:"BatchA"{"}"}</code> or a simple string: <code>BatchA|A001</code>.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+const statusBox = document.getElementById('status');
+const resultBox = document.getElementById('result');
+function showStatus(msg, type) {
+  statusBox.className = 'alert alert-' + type;
+  statusBox.textContent = msg;
+  statusBox.classList.remove('d-none');
+}
+function onScanSuccess(decodedText, decodedResult) {
+  resultBox.textContent = decodedText;
+  fetch("{{ url_for('api_scan') }}", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ text: decodedText })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      showStatus('Your attendance has been marked successfully.', 'success');
+    } else {
+      showStatus(data.msg || 'Failed to mark attendance', 'danger');
+    }
+  })
+  .catch(err => { showStatus('Error: ' + err, 'danger'); });
+}
+const html5QrcodeScanner = new Html5QrcodeScanner(
+  "reader",
+  { fps: 10, qrbox: 400, rememberLastUsedCamera: true },
+  false
+);
+html5QrcodeScanner.render(onScanSuccess);
+</script>
+{% endblock %}

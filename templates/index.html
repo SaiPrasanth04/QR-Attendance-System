@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  [id^="edit-form-"] {
+    display: none;
+  }
+  [id^="edit-btn-"] {
+    display: inline-block;
+  }
+</style>
+<!-- Upload/Replace Excel -->
+<div class="row mb-4">
+  <div class="col-lg-6 mx-auto">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Upload / Replace Excel (.xlsx)</h5>
+        <form method="POST" enctype="multipart/form-data">
+          <div class="mb-3">
+            <input class="form-control" type="file" name="excel_file" accept=".xlsx" required>
+          </div>
+          <button class="btn btn-lg btn-primary">Upload</button>
+          <a class="btn btn-lg btn-outline-secondary" href="{{ url_for('download_excel') }}">Download Current Excel</a>
+        </form>
+        <p class="text-muted mt-2 mb-0">Excel stores everything. One sheet per batch (sheet name = batch), columns: <code>ID</code>, <code>Name</code>. Attendance columns (dates) are auto-created.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add a Student -->
+<div class="row mb-4">
+  <div class="col-lg-8 mx-auto">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Add Student (and optionally generate QR)</h5>
+        <form method="POST" action="{{ url_for('add_student_route') }}" class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Student ID</label>
+            <input type="text" name="student_id" class="form-control" required>
+          </div>
+          <div class="col-md-5">
+            <label class="form-label">Student Name</label>
+            <input type="text" name="student_name" class="form-control" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Email (optional)</label>
+            <input type="email" name="email" class="form-control" placeholder="Enter email (optional)">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Batch (sheet name)</label>
+            <input type="text" name="batch_name" class="form-control" placeholder="e.g. BatchA" required>
+          </div>
+          <div class="col-12 form-check">
+            <input class="form-check-input" type="checkbox" name="gen_qr" id="gen_qr">
+            <label class="form-check-label" for="gen_qr">Generate QR for this student</label>
+          </div>
+          <div class="col-12">
+            <button class="btn btn-lg btn-success">Add Student</button>
+          </div>
+        </form>
+        <p class="text-muted mt-2 mb-0">Students are always stored alphabetically by Name in each batch.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Delete Student -->
+<div class="row mb-4">
+  <div class="col-lg-8 mx-auto">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Delete Student</h5>
+        <form method="POST" action="{{ url_for('delete_student_route') }}" class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Student ID</label>
+            <input type="text" name="delete_student_id" class="form-control" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Batch (sheet name)</label>
+            <input type="text" name="delete_batch_name" class="form-control" required>
+          </div>
+          <div class="col-12">
+            <button class="btn btn-lg btn-danger">Delete Student</button>
+          </div>
+        </form>
+        <p class="text-muted mt-2 mb-0">Enter the Student ID and Batch to remove a student completely from the system.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="my-4">
+
+<!-- Batches and Student Details -->
+<div class="card shadow-sm">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between">
+      <h5 class="card-title mb-0">Batches & Student Details</h5>
+  <form method="POST" action="{{ url_for('auto_absent') }}" class="d-inline-flex align-items-center mb-2">
+    <select name="batch_name" class="form-select me-2" style="width:auto;display:inline-block;">
+      <option value="">All Batches</option>
+      {% for batch in batches %}
+        <option value="{{ batch }}">{{ batch }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-lg btn-auto-absent">Auto Mark Absent (Today)</button>
+  </form>
+{% block modal %}{% endblock %}
+  <form method="POST" action="{{ url_for('send_absent_mail_today') }}" style="display:inline;">
+    <button type="submit" class="btn btn-lg btn-warning ms-2">Send Mail to Today's Absentees</button>
+  </form>
+    </div>
+    <div class="row row-cols-1 row-cols-md-2 g-3 mt-1">
+      {% if batch_details %}
+        {% for batch in batch_details %}
+          <div class="col">
+            <div class="card h-100">
+              <div class="card-header bg-primary text-white">
+                <div class="fw-bold">{{ batch.batch }}</div>
+                <small class="text-light">Sheet: {{ batch.batch }}</small>
+              </div>
+              <!-- No student details table, only batch name and actions button -->
+              <div class="card-footer bg-white border-0 d-flex flex-wrap gap-2">
+                <a class="btn btn-sm btn-primary" href="{{ url_for('generate_qr_batch', batch=batch.batch) }}">Generate All QR</a>
+                <a class="btn btn-sm btn-primary" href="{{ url_for('view_batch_qr', batch=batch.batch) }}">View QR</a>
+                <a class="btn btn-sm btn-primary" href="{{ url_for('attendance_batch', batch=batch.batch) }}">View Attendance</a>
+                <a class="btn btn-sm btn-primary" href="{{ url_for('download_qr_zip', batch=batch.batch) }}">Download ZIP</a>
+                <!-- Edit Batch Name Button and Inline Form -->
+                <button class="btn btn-sm btn-secondary" type="button" id="edit-btn-{{ batch.batch|replace(' ', '_') }}" onclick="toggleEditForm('{{ batch.batch|replace(' ', '_') }}')">Edit</button>
+                <form method="POST" action="{{ url_for('edit_batch') }}" class="d-inline-flex align-items-center ms-2" id="edit-form-{{ batch.batch|replace(' ', '_') }}" style="display:none;">
+                  <input type="hidden" name="old_batch_name" value="{{ batch.batch }}">
+                  <input type="text" name="new_batch_name" class="form-control form-control-sm me-2" value="{{ batch.batch }}" autocomplete="off" aria-label="New batch name for {{ batch.batch }}" style="width: 120px;">
+                  <button type="submit" class="btn btn-sm btn-success">Save</button>
+                </form>
+              </div>
+<script>
+// On page load, hide all edit forms and show all edit buttons
+window.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('[id^="edit-form-"]').forEach(function(form) {
+    form.style.display = 'none';
+  });
+  document.querySelectorAll('[id^="edit-btn-"]').forEach(function(btn) {
+    btn.style.display = 'inline-block';
+  });
+});
+
+function toggleEditForm(batchId) {
+  var form = document.getElementById('edit-form-' + batchId);
+  var btn = document.getElementById('edit-btn-' + batchId);
+  // Hide all forms and show all edit buttons (only one open at a time)
+  document.querySelectorAll('[id^="edit-form-"]').forEach(function(f) { f.style.display = 'none'; });
+  document.querySelectorAll('[id^="edit-btn-"]').forEach(function(b) { b.style.display = 'inline-block'; });
+  // Show the selected form and hide its button
+  form.style.display = 'inline-flex';
+  btn.style.display = 'none';
+  form.querySelector('input[name="new_batch_name"]').focus();
+}
+</script>
+              <!-- No student details table, only batch name and actions button -->
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="col">
+          <div class="alert alert-info mb-0">No batches yet. Upload an Excel or add a student to create a batch.</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

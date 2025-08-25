@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h4 class="mb-3">QR Codes — {{ batch }}</h4>
+<div class="mb-3">
+  <a class="btn btn-secondary" href="{{ url_for('download_qr_zip', batch=batch) }}">Download ZIP</a>
+  <a class="btn btn-primary" href="{{ url_for('download_qr_pdf', batch=batch) }}">Download A4 PDF (12/page)</a>
+  <a class="btn btn-outline-primary" href="{{ url_for('index') }}">Back</a>
+</div>
+
+{% if files %}
+<div class="row row-cols-2 row-cols-md-4 g-3">
+  {% for f in files %}
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        <img class="card-img-top p-2" src="{{ url_for('serve_qr', batch=batch, filename=f) }}" alt="{{ f }}">
+        <div class="card-body py-2">
+          <small class="text-muted">{{ f }}</small>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">No QR files yet for this batch. Click “Generate All QR”.</div>
+{% endif %}
+{% endblock %}
